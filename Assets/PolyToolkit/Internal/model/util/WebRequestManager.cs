@@ -134,13 +134,12 @@ namespace PolyToolkitInternal.client.model.util {
       bool cacheSupported = Application.platform == RuntimePlatform.WindowsEditor ||
         Application.platform == RuntimePlatform.WindowsPlayer ||
         Application.platform == RuntimePlatform.OSXEditor ||
-        Application.platform == RuntimePlatform.OSXPlayer;
+        Application.platform == RuntimePlatform.OSXPlayer ||
+        Application.platform == RuntimePlatform.Android;
       PtDebug.LogFormat("Platform: {0}, cache supported: {1}", Application.platform, cacheSupported);
 
       if (cacheSupported && config.cacheEnabled) {
-        string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string defaultCachePath = Path.Combine(Path.Combine(Path.Combine(
-          appDataPath, Application.companyName), Application.productName), "WebRequestCache");
+        string defaultCachePath = Path.Combine(Application.persistentDataPath, "WebRequestCache");
 
         string cachePath = config.cachePathOverride;
         if (string.IsNullOrEmpty(cachePath)) {
