@@ -91,14 +91,14 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       {PolyCategory.TECH, "tech"},
       {PolyCategory.TRANSPORT, "transport"},
     };
-    
+
     private static readonly Dictionary<PolyOrderBy, string> ORDER_BY = new Dictionary<PolyOrderBy, string>() {
       {PolyOrderBy.BEST, "BEST"},
       {PolyOrderBy.NEWEST, "NEWEST"},
       {PolyOrderBy.OLDEST, "OLDEST"},
       {PolyOrderBy.LIKED_TIME, "LIKED_TIME"},
     };
-    
+
     private static readonly Dictionary<PolyFormatFilter, string> FORMAT_FILTER = new Dictionary<PolyFormatFilter, string>() {
       {PolyFormatFilter.BLOCKS, "BLOCKS"},
       {PolyFormatFilter.FBX, "FBX"},
@@ -107,7 +107,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       {PolyFormatFilter.OBJ, "TILT"},
       {PolyFormatFilter.TILT, "TILT"},
     };
-    
+
     private static readonly Dictionary<PolyVisibilityFilter, string> VISIBILITY = new Dictionary<PolyVisibilityFilter, string>() {
       {PolyVisibilityFilter.PRIVATE, "PRIVATE"},
       {PolyVisibilityFilter.PUBLISHED, "PUBLISHED"},
@@ -128,7 +128,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       sb.Append(BASE_URL)
         .Append("/v1/assets")
         .AppendFormat("?key={0}", WWW.EscapeURL(PolyMainInternal.Instance.apiKey));
-      
+
       if (listAssetsRequest.formatFilter != null) {
         sb.AppendFormat("&format={0}", WWW.EscapeURL(FORMAT_FILTER[listAssetsRequest.formatFilter.Value]));
       }
@@ -136,7 +136,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       if (listAssetsRequest.keywords != null) {
         sb.AppendFormat("&keywords={0}", WWW.EscapeURL(listAssetsRequest.keywords));
       }
-      
+
       if (listAssetsRequest.category != PolyCategory.UNSPECIFIED) {
         sb.AppendFormat("&category={0}", WWW.EscapeURL(CATEGORIES[listAssetsRequest.category]));
       }
@@ -165,7 +165,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       sb.Append(BASE_URL)
         .Append("/v1/users/me/assets")
         .AppendFormat("?key={0}", PolyMainInternal.Instance.apiKey);
-        
+
       if (listUserAssetsRequest.formatFilter != null) {
         sb.AppendFormat("&format={0}", WWW.EscapeURL(FORMAT_FILTER[listUserAssetsRequest.formatFilter.Value]));
       }
@@ -190,7 +190,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
       sb.Append(BASE_URL)
         .Append("/v1/users/me/likedassets")
         .AppendFormat("?key={0}", PolyMainInternal.Instance.apiKey);
-        
+
       sb.AppendFormat("&order_by={0}", WWW.EscapeURL(ORDER_BY[listLikedAssetsRequest.orderBy]));
       sb.AppendFormat("&page_size={0}", listLikedAssetsRequest.pageSize);
       if (listLikedAssetsRequest.pageToken != null) {
@@ -262,19 +262,23 @@ namespace PolyToolkitInternal.api_clients.poly_client {
     /// </summary>
     public static PolyStatus ParseAsset(JObject asset, out PolyAsset polyAsset) {
       polyAsset = new PolyAsset();
-      
+
       if (asset["visibility"] == null) {
         return PolyStatus.Error("Asset has no visibility set.");
       }
 
       polyAsset.name = asset["name"].ToString();
-      polyAsset.authorName = asset["authorName"].ToString();
+
+      if (asset["authorName"] != null) {
+        polyAsset.authorName = asset["authorName"].ToString();
+      }
+
       if (asset["thumbnail"] != null) {
         IJEnumerable<JToken> thumbnailElements = asset["thumbnail"].AsJEnumerable();
         polyAsset.thumbnail = new PolyFile(thumbnailElements["relativePath"].ToString(),
           thumbnailElements["url"].ToString(), thumbnailElements["contentType"].ToString());
       }
-      
+
       if (asset["formats"] == null) {
         Debug.LogError("No formats found");
       } else {
@@ -408,7 +412,7 @@ namespace PolyToolkitInternal.api_clients.poly_client {
     /// <param name="isRecursion">
     ///   If true, this is a recursive call to this function, and no further retries should be attempted.
     /// </param>
-    public void GetAsset(string assetId, Action<PolyStatus,PolyAsset> callback, bool isRecursion = false) {  
+    public void GetAsset(string assetId, Action<PolyStatus,PolyAsset> callback, bool isRecursion = false) {
       // If the user passed in a raw asset ID (no "assets/" prefix), fix it.
       if (!assetId.StartsWith("assets/")) {
         assetId = "assets/" + assetId;
