@@ -1,0 +1,18 @@
+{
+  "name": "com.google.poly-toolkit-unity",
+  "displayName": "Poly Toolkit for Unity",
+  "version": "1.1.2",
+  "unity": "2018.3",
+  "description": "A plugin for the Unity engine that allows you to import 3D assets from Poly at edit time and at runtime.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/googlearchive/poly-toolkit-unity.git"
+  },
+  "dependencies": {
+    "com.unity.test-framework": "1.1.14"
+  },
+  "author": "Google",
+  "hideInEditor": false,
+  "homepage": "https://github.com/googlearchive/poly-toolkit-unity.git",
+  "license": "Apeache License 2.0"
+}
