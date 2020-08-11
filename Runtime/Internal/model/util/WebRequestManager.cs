@@ -26,7 +26,7 @@ namespace PolyToolkitInternal.client.model.util {
   /// <summary>
   /// Manages web requests, limiting how many can happen simultaneously at any given time and re-using
   /// buffers as much as possible to avoid reallocation and garbage collection.
-  /// 
+  ///
   /// Not *all* web requests must be routed through this class. Small, infrequent web requests can be made directly
   /// via UnityWebRequest without using this class. However, larger or frequent requests should use this, since this
   /// will avoid the expensive allocation of numerous download buffers (a typical UnityWebRequest allocates many
@@ -134,13 +134,12 @@ namespace PolyToolkitInternal.client.model.util {
       bool cacheSupported = Application.platform == RuntimePlatform.WindowsEditor ||
         Application.platform == RuntimePlatform.WindowsPlayer ||
         Application.platform == RuntimePlatform.OSXEditor ||
-        Application.platform == RuntimePlatform.OSXPlayer;
+        Application.platform == RuntimePlatform.OSXPlayer ||
+        Application.platform == RuntimePlatform.Android;
       PtDebug.LogFormat("Platform: {0}, cache supported: {1}", Application.platform, cacheSupported);
 
       if (cacheSupported && config.cacheEnabled) {
-        string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string defaultCachePath = Path.Combine(Path.Combine(Path.Combine(
-          appDataPath, Application.companyName), Application.productName), "WebRequestCache");
+        string defaultCachePath = Path.Combine(Application.persistentDataPath, "WebRequestCache");
 
         string cachePath = config.cachePathOverride;
         if (string.IsNullOrEmpty(cachePath)) {
