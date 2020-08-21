@@ -87,40 +87,42 @@ public class PtSettings : ScriptableObject {
     }
 #endif
     instance = FindPtSettings();
-    }
+  }
 
-    /// <summary>
-    /// Copy the PtSeetings file found in the Package in the Settings folder.
-    /// This is necessary because when used as a custom package, Unity makes the
-    /// whole folder and its files read-only. So at first import, when no PtSettings
-    /// are found in Resources, we copy it there.
-    /// </summary>
-    private static void CopyPtSettings()
+  /// <summary>
+  /// Copy the PtSeetings file found in the Package in the Settings folder.
+  /// This is necessary because when used as a custom package, Unity makes the
+  /// whole folder and its files read-only. So at first import, when no PtSettings
+  /// are found in Resources, we copy it there.
+  /// </summary>
+#if UNITY_EDITOR
+  private static void CopyPtSettings()
+  {
+    string[] foundPaths = UnityEditor.AssetDatabase.FindAssets("t:PtSettings")
+        .Select(UnityEditor.AssetDatabase.GUIDToAssetPath).ToArray();
+    if (foundPaths.Length == 0)
     {
-      string[] foundPaths = UnityEditor.AssetDatabase.FindAssets("t:PtSettings")
-          .Select(UnityEditor.AssetDatabase.GUIDToAssetPath).ToArray();
-      if (foundPaths.Length == 0)
-      {
-        Debug.LogError("Found no PtSettings assets. Re-import Poly Toolkit");
-        return;
-      }
-      else
-      {
-        if (foundPaths.Length > 1)
-        {
-          Debug.LogErrorFormat(
-              "Found multiple PtSettings assets; delete them and re-import Poly Toolkit\n{0}",
-              string.Join("\n", foundPaths));
-        }
-
-        // Application.dataPath at edit time conveniently returns the absolute path of the
-        // Asset folder (We could have also used AssetDatabase.CreateFolder(string, string) )
-        string absoluteDestinationPath = Path.Combine(Application.dataPath, PtSettingsRelativeDestinationPath);
-        string relativeDestinationFilePath = Path.Combine("Assets", PtSettingsRelativeDestinationPath, "PtSettings.asset");
-        Directory.CreateDirectory(absoluteDestinationPath);
-        UnityEditor.AssetDatabase.CopyAsset(foundPaths[0], relativeDestinationFilePath);
-      }
+      Debug.LogError("Found no PtSettings assets. Re-import Poly Toolkit");
+      return;
     }
+    else
+    {
+      if (foundPaths.Length > 1)
+      {
+        Debug.LogErrorFormat(
+            "Found multiple PtSettings assets; delete them and re-import Poly Toolkit\n{0}",
+            string.Join("\n", foundPaths));
+      }
+
+      // Application.dataPath at edit time conveniently returns the absolute path of the
+      // Asset folder (We could have also used AssetDatabase.CreateFolder(string, string) )
+      string absoluteDestinationPath = Path.Combine(Application.dataPath, PtSettingsRelativeDestinationPath);
+      string relativeDestinationFilePath = Path.Combine("Assets", PtSettingsRelativeDestinationPath, "PtSettings.asset");
+      Directory.CreateDirectory(absoluteDestinationPath);
+      UnityEditor.AssetDatabase.CopyAsset(foundPaths[0], relativeDestinationFilePath);
+    }
+  }
+#endif
 
   /// <summary>
   /// Finds the singleton PtSettings instance. Works during edit time and run time.
