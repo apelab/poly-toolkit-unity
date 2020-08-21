@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 using PolyToolkit;
+using System.IO;
 
 namespace PolyToolkitInternal {
 
@@ -28,6 +29,7 @@ namespace PolyToolkitInternal {
 [UnityEditor.InitializeOnLoad]
 #endif
 public class PtSettings : ScriptableObject {
+  private const string PtSettingsRelativeDestinationPath = "Poly/Resources";
   /// <summary>
   /// Poly Toolkit version number.
   /// </summary>
@@ -77,45 +79,62 @@ public class PtSettings : ScriptableObject {
   /// Initialize PtSettings. Must be called on main thread.
   /// </summary>
   public static void Init() {
+#if UNITY_EDITOR
+    PtSettings ptSettings = Resources.Load<PtSettings>("PtSettings");
+    if (ptSettings == null)
+    {
+      CopyPtSettings();
+    }
+#endif
     instance = FindPtSettings();
-  }
+    }
+
+    /// <summary>
+    /// Copy the PtSeetings file found in the Package in the Settings folder.
+    /// This is necessary because when used as a custom package, Unity makes the
+    /// whole folder and its files read-only. So at first import, when no PtSettings
+    /// are found in Resources, we copy it there.
+    /// </summary>
+    private static void CopyPtSettings()
+    {
+      string[] foundPaths = UnityEditor.AssetDatabase.FindAssets("t:PtSettings")
+          .Select(UnityEditor.AssetDatabase.GUIDToAssetPath).ToArray();
+      if (foundPaths.Length == 0)
+      {
+        Debug.LogError("Found no PtSettings assets. Re-import Poly Toolkit");
+        return;
+      }
+      else
+      {
+        if (foundPaths.Length > 1)
+        {
+          Debug.LogErrorFormat(
+              "Found multiple PtSettings assets; delete them and re-import Poly Toolkit\n{0}",
+              string.Join("\n", foundPaths));
+        }
+
+        // Application.dataPath at edit time conveniently returns the absolute path of the
+        // Asset folder (We could have also used AssetDatabase.CreateFolder(string, string) )
+        string absoluteDestinationPath = Path.Combine(Application.dataPath, PtSettingsRelativeDestinationPath);
+        string relativeDestinationFilePath = Path.Combine("Assets", PtSettingsRelativeDestinationPath, "PtSettings.asset");
+        Directory.CreateDirectory(absoluteDestinationPath);
+        UnityEditor.AssetDatabase.CopyAsset(foundPaths[0], relativeDestinationFilePath);
+      }
+    }
 
   /// <summary>
   /// Finds the singleton PtSettings instance. Works during edit time and run time.
-  /// At edit time, we search for the asset using FindAssets("t:PtSettings").
-  /// At run time, we load it as a resource.
+  /// Since we copy the PtSettings to the Resources folder, Resources.Load should return
+  /// the instance at both edit and run time. If it doesn't find we either need to copy it
+  /// or something went wrong.
   /// </summary>
   /// <returns>The project's PtSettings instance.</returns>
   static PtSettings FindPtSettings() {
-    if (Application.isPlaying) {
-      // At run-time, just load the resource.
-      PtSettings ptSettings = Resources.Load<PtSettings>("PtSettings");
-      if (ptSettings == null) {
-        Debug.LogError("PtSettings not found in Resources. Re-import Poly Toolkit.");
-      }
-      return ptSettings;
+    PtSettings ptSettings = Resources.Load<PtSettings>("PtSettings");
+    if (ptSettings == null) {
+      Debug.LogError("PtSettings not found in Resources. Re-import Poly Toolkit.");
     }
-#if UNITY_EDITOR
-    // We're in the editor at edit-time, so just search for the asset in the project.
-    string[] foundPaths = UnityEditor.AssetDatabase.FindAssets("t:PtSettings")
-        .Select(UnityEditor.AssetDatabase.GUIDToAssetPath).ToArray();
-    if (foundPaths.Length == 0) {
-      Debug.LogError("Found no PtSettings assets. Re-import Poly Toolkit");
-      return null;
-    } else {
-      if (foundPaths.Length > 1) {
-        Debug.LogErrorFormat(
-            "Found multiple PtSettings assets; delete them and re-import Poly Toolkit\n{0}",
-            string.Join("\n", foundPaths));
-      }
-      return UnityEditor.AssetDatabase.LoadAssetAtPath<PtSettings>(
-          foundPaths[0]);
-    }
-#else
-    // We are not in the editor but somehow Application.isPlaying is false, which shouldn't happen.
-    Debug.LogError("Unexpected config: UNITY_EDITOR not defined but Application.isPlaying==false.");
-    return null;
-#endif
+    return ptSettings;
   }
 
   // One or the other of material and descriptor should be set.
@@ -123,10 +142,10 @@ public class PtSettings : ScriptableObject {
   [Serializable]
   public struct SurfaceShaderMaterial {
     public string shaderUrl;
-    #pragma warning disable 0649  // Don't warn about fields that are never assigned to.
+#pragma warning disable 0649  // Don't warn about fields that are never assigned to.
     [SerializeField] private Material material;
     [SerializeField] private TiltBrushToolkit.BrushDescriptor descriptor;
-    #pragma warning restore 0649
+#pragma warning restore 0649
 
     internal Material Material {
       get {
